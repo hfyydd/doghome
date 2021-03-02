@@ -17,45 +17,61 @@ package com.example.androiddevchallenge
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.androiddevchallenge.ui.theme.MyTheme
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.IntOffset
+import com.example.androiddevchallenge.ui.DetailPage
+import com.example.androiddevchallenge.ui.DogList
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val viewModel: DogViewModel by viewModels()
         setContent {
-            MyTheme {
-                MyApp()
+
+            // A surface container using the 'background' color from the theme
+            Box {
+                DogList(dogs = viewModel.dogs, viewModel)
+                val openOffset by animateFloatAsState(
+                    if (viewModel.currentDog == null) {
+                        1f
+                    } else {
+                        0f
+                    }
+                )
+                if (viewModel.currentDog != null) {
+                    DetailPage(
+                        Modifier.percentOffsetX(openOffset),
+                        dogInput = viewModel.currentDog
+                    ) {
+                        viewModel.endDog()
+                    }
+                }
             }
+
+        }
+    }
+
+    override fun onBackPressed() {
+        val viewModel: DogViewModel by viewModels()
+        if (viewModel.currentDog != null) {
+            viewModel.endDog()
+        } else {
+            super.onBackPressed()
         }
     }
 }
 
-// Start building your app here!
-@Composable
-fun MyApp() {
-    Surface(color = MaterialTheme.colors.background) {
-        Text(text = "Ready... Set... GO!")
-    }
-}
 
-@Preview("Light Theme", widthDp = 360, heightDp = 640)
-@Composable
-fun LightPreview() {
-    MyTheme {
-        MyApp()
-    }
-}
-
-@Preview("Dark Theme", widthDp = 360, heightDp = 640)
-@Composable
-fun DarkPreview() {
-    MyTheme(darkTheme = true) {
-        MyApp()
+fun Modifier.percentOffsetX(percent: Float) = this.layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    layout(placeable.width, placeable.height) {
+        placeable.placeRelative(IntOffset((placeable.width * percent).roundToInt(), 0))
     }
 }
